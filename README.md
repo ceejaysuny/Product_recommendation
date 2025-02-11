@@ -38,7 +38,7 @@ pip install pandas numpy scipy scikit-learn matplotlib seaborn tensorflow flask
    - Create a Flask API to serve recommendations.
 
 ## Running the Jupyter Notebook
-Open the `Recomender2_System.ipynb` file and run the cells sequentially to preprocess data, train models, and evaluate them.
+Open the `Recommender_System.ipynb` file and run the cells sequentially to preprocess data, train models, and evaluate them.
 
 ## Running the Flask Application
 1. Place the `index.html` file inside the `templates` folder.
