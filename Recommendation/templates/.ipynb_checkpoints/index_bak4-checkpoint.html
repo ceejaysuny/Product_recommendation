@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Recommendation System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+        }
+        .container {
+            width: 50%;
+            margin: auto;
+            padding: 20px;
+            background-color: #ffffff;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            margin-top: 50px;
+        }
+        h1 {
+            text-align: center;
+            color: #343a40;
+        }
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+        label {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        input, select {
+            margin-bottom: 20px;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+        }
+        button {
+            padding: 10px;
+            font-size: 16px;
+            color: white;
+            background-color: #007bff;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #e9ecef;
+            border-radius: 4px;
+        }
+        .extra-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border: 1px solid #ddd;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Product Recommendation System</h1>
+
+        <div class="extra-buttons">
+            <button onclick="generateUsers()">Generate 5 Random Users</button>
+            <button onclick="generateProducts()">Generate 5 Product IDs</button>
+        </div>
+
+        <form id="recommendation-form">
+            <label for="method">Recommendation Method:</label>
+            <select id="method" name="method" onchange="toggleFields()">
+                <option value="collaborative">Collaborative</option>
+                <option value="content">Content</option>
+            </select>
+
+            <label for="user_id" id="user_id_label">User ID (for Collaborative):</label>
+            <input type="text" id="user_id" name="user_id">
+
+            <label for="item_id" id="item_id_label">Item ID (for Content):</label>
+            <input type="number" id="item_id" name="item_id">
+
+            <button type="submit">Get Recommendations</button>
+        </form>
+
+        <div class="result" id="result"></div>
+
+        <!-- New Section for Getting Titles -->       
+        
+      <div class="extra-actions">
+        <label for="product-ids">Enter 5 Sparse Matrix Product IDs:</label>
+        <input type="text" id="product-ids" placeholder="Comma-separated product IDs" style="width: 100%; margin-bottom: 10px;">
+        <button onclick="fetchTitlesFromIds()" style="width: 100%; margin-bottom: 20px;">Get Titles from Product IDs</button>
+
+        <label for="parent-asins">Enter 5 Parent ASINs:</label>
+        <input type="text" id="parent-asins" placeholder="Comma-separated parent ASINs" style="width: 100%; margin-bottom: 10px;">
+        <button onclick="fetchTitlesFromAsins()" style="width: 100%;">Get Titles from Parent ASINs</button>
+</div>
+
+
+        <!-- Results Table -->
+        <div id="result-table"></div>
+    </div>
+
+    <script>
+        function toggleFields() {
+            const method = document.getElementById('method').value;
+            const user_id_label = document.getElementById('user_id_label');
+            const user_id_input = document.getElementById('user_id');
+            const item_id_label = document.getElementById('item_id_label');
+            const item_id_input = document.getElementById('item_id');
+
+            if (method === 'collaborative') {
+                user_id_label.style.display = 'block';
+                user_id_input.style.display = 'block';
+                item_id_label.style.display = 'none';
+                item_id_input.style.display = 'none';
+            } else if (method === 'content') {
+                user_id_label.style.display = 'none';
+                user_id_input.style.display = 'none';
+                item_id_label.style.display = 'block';
+                item_id_input.style.display = 'block';
+            }
+        }
+
+        function generateUsers() {
+            fetch('/generate-random-users')
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    if (data.users) {
+                        resultDiv.innerHTML = '<h2>Random Users:</h2><ul>' + data.users.map(user => `<li>${user}</li>`).join('') + '</ul>';
+                    } else if (data.error) {
+                        resultDiv.innerHTML = `<h2>Error:</h2><p>${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = `<h2>Error:</h2><p>${error}</p>`;
+                });
+        }
+
+        function generateProducts() {
+            fetch('/generate-random-products')
+                .then(response => response.json())
+                .then(data => {
+                    const resultDiv = document.getElementById('result');
+                    if (data.products) {
+                        resultDiv.innerHTML = '<h2>Random Product IDs:</h2><ul>' + data.products.map(product => `<li>${product}</li>`).join('') + '</ul>';
+                    } else if (data.error) {
+                        resultDiv.innerHTML = `<h2>Error:</h2><p>${data.error}</p>`;
+                    }
+                })
+                .catch(error => {
+                    const resultDiv = document.getElementById('result');
+                    resultDiv.innerHTML = `<h2>Error:</h2><p>${error}</p>`;
+                });
+        }
+
+        function fetchTitlesFromIds() {
+            const productIds = document.getElementById('product-ids').value.split(',').map(id => parseInt(id.trim()));
+            fetch('/get-titles-from-ids', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ product_ids: productIds })
+            })
+            .then(response => response.json())
+            .then(data => displayResults(data.titles, "Titles from Product IDs"))
+            .catch(error => alert(error));
+        }
+
+        function fetchTitlesFromAsins() {
+            const parentAsins = document.getElementById('parent-asins').value.split(',').map(id => id.trim());
+            fetch('/get-titles-from-asin', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ parent_asins: parentAsins })
+            })
+            .then(response => response.json())
+            .then(data => displayResults(data.titles, "Titles from Parent ASINs"))
+            .catch(error => alert(error));
+        }
+
+        function displayResults(titles, heading) {
+            let html = `<h2>${heading}</h2><table><tr><th>#</th><th>Title</th></tr>`;
+            titles.forEach((title, index) => {
+                html += `<tr><td>${index + 1}</td><td>${title}</td></tr>`;
+            });
+            html += `</table>`;
+            document.getElementById('result-table').innerHTML = html;
+        }
+
+        // Initial call to set the fields based on the default selection
+        toggleFields();
+    </script>
+</body>
+</html>
